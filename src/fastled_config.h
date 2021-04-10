@@ -65,5 +65,7 @@
 // It changes how color scaling works and uses global brightness before scaling down color values.
 // This enable much more accurate color control on low brightness settings.
 //#define FASTLED_USE_GLOBAL_BRIGHTNESS 1
+#define FASTLED_USE_PER_PIXEL_BRIGHTNESS 1
+#define FASTLED_USE_16_BIT_PIXELS 1
 
 #endif
