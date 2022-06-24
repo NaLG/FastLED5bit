@@ -745,6 +745,147 @@ struct CRGB {
     } HTMLColorCode;
 };
 
+struct uint8_2x {
+    union {
+        uint8_t bs[2];
+        struct {
+            uint8_t hi;
+            uint8_t lo;
+        };
+    };
+};
+
+struct CRGB16 {
+	union {
+		struct {
+            union {
+                uint16_t r;
+                uint16_t red;
+                uint8_2x r8;
+            };
+            union {
+                uint16_t g;
+                uint16_t green;
+                uint8_2x g8;
+            };
+            union {
+                uint16_t b;
+                uint16_t blue;
+                uint8_2x b8;
+            };
+        };
+		uint16_t raw[3];
+	};
+
+    /// Array access operator to index into the crgb object
+	inline uint16_t& operator[] (uint16_t x) __attribute__((always_inline))
+    {
+        return raw[x];
+    }
+
+    /// Array access operator to index into the crgb object
+    inline const uint16_t& operator[] (uint16_t x) const __attribute__((always_inline))
+    {
+        return raw[x];
+    }
+
+    // default values are UNINITIALIZED
+    inline CRGB16() __attribute__((always_inline)) = default;
+
+    /// allow construction from R, G, B
+    inline CRGB16( uint16_t ir, uint16_t ig, uint16_t ib)  __attribute__((always_inline))
+        : r(ir), g(ig), b(ib)
+    {
+    }
+
+    /// allow copy construction
+	inline CRGB16(const CRGB16& rhs) __attribute__((always_inline)) = default;
+
+    /// allow assignment from one RGB struct to another
+	inline CRGB16& operator= (const CRGB16& rhs) __attribute__((always_inline)) = default;
+
+    /// allow assignment from R, G, and B
+	inline CRGB16& setRGB (uint16_t nr, uint16_t ng, uint16_t nb) __attribute__((always_inline))
+    {
+        r = nr;
+        g = ng;
+        b = nb;
+        return *this;
+    }
+
+    /// assign hi bytes from a CRGB object
+    inline void sethi8s(CRGB c)
+    {
+        r8.hi = c.r;
+        g8.hi = c.g;
+        b8.hi = c.b;
+    }
+
+    /// assign lo bytes from a CRGB object
+    inline void setlo8s(CRGB c)
+    {
+        r8.lo = c.r;
+        g8.lo = c.g;
+        b8.lo = c.b;
+    }
+
+    /// return a new CRGB object from hi bytes
+    inline CRGB hi8s() const
+    {
+        CRGB ret;
+
+        ret.r = r8.hi;
+        ret.g = g8.hi;
+        ret.b = b8.hi;
+
+        return ret;
+    }
+
+    /// return a new CRGB16 object from lo bytes
+    inline CRGB lo8s() const
+    {
+        CRGB ret;
+
+        ret.r = r8.lo;
+        ret.g = g8.lo;
+        ret.b = b8.lo;
+
+        return ret;
+    }
+
+    /// return a new CRGB16 object after performing a linear interpolation between this object and the passed in object
+    inline CRGB16 lerp16( const CRGB16& other, fract16 frac) const
+    {
+        CRGB16 ret;
+
+        ret.r = lerp16by16(r,other.r,frac);
+        ret.g = lerp16by16(g,other.g,frac);
+        ret.b = lerp16by16(b,other.b,frac);
+
+        return ret;
+    }
+
+
+
+    /// Predefined RGB colors
+    typedef enum {
+        DarkBlue=0x000000008B00,
+        DarkGray=0xA900A900A900,
+        DarkGreen=0x000064000000,
+        DarkViolet=0x94000000D300,
+        Gold=0xFF00D7000000,
+
+        // LED RGB color that roughly approximates
+        // the color of incandescent fairy lights,
+        // assuming that you're using FastLED
+        // color correction on your LEDs (recommended).
+        FairyLight=0xFF00E4002D00,
+        // If you are using no color correction, use this
+        FairyLightNCC=0xFF009D002A00
+
+    } HTMLColorCode16;
+};
+
 
 inline __attribute__((always_inline)) bool operator== (const CRGB& lhs, const CRGB& rhs)
 {

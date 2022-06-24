@@ -307,7 +307,7 @@ protected:
 		s1 = (maxBrightness * s1 + (brightness >> 1)) / brightness;
 		s2 = (maxBrightness * s2 + (brightness >> 1)) / brightness;
 #else
-		const uint8_t brightness = 0x1F;
+		// const uint8_t brightness = 0x1F;
 #endif
 
 		startBoundary();
