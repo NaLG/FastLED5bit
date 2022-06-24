@@ -1,6 +1,6 @@
 {
-    "name": "FastLED",
-    "description": "FastLED is a library for programming addressable rgb led strips (APA102/Dotstar, WS2812/Neopixel, LPD8806, and a dozen others) acting both as a driver and as a library for color management and fast math.",
+    "name": "FastLED5bit",
+    "description": "FastLED [modified for per-pixel 5bit brightness] is a library for programming addressable rgb led strips (APA102/Dotstar, WS2812/Neopixel, LPD8806, and a dozen others) acting both as a driver and as a library for color management and fast math.",
     "keywords": "led,noise,rgb,math,fast",
     "authors": [
         {
@@ -28,10 +28,15 @@
             "url": "https://github.com/uberjay",
             "maintainer": true
         }
+        {
+            "name": "Nathaniel Gustafson",
+            "url": "https://github.com/nalg",
+            "maintainer": false
+        }
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/FastLED/FastLED.git"
+        "url": "https://github.com/NaLG/FastLED5bit"
     },
     "version": "3.5.0",
     "license": "MIT",

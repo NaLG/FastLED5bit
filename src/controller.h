@@ -40,6 +40,7 @@ class CLEDController {
 protected:
     friend class CFastLED;
     CRGB *m_Data;
+    uint8_t *b_Data; // nlg - only used for APA101WB.  Cleanup for memory usage before merging into general-FastLED.
     CLEDController *m_pNext;
     CRGB m_ColorCorrection;
     CRGB m_ColorTemperature;
@@ -60,9 +61,18 @@ protected:
 	///@param scale the rgb scaling to apply to each led before writing it out
     virtual void show(const struct CRGB *data, int nLeds, CRGB scale) = 0;
 
+	/// write the passed in rgb data out to the leds managed by this controller
+	///@param data the rgb data to write out to the strip
+	///@param bdata the brightness data to write out to the strip (0-31)
+	///@param nLeds the number of leds being written out
+	///@param scale the rgb scaling to apply to each led before writing it out
+    virtual void show(const struct CRGB *data, uint8_t *bdata, int nLeds, CRGB scale) = 0;
+
 public:
 	/// create an led controller object, add it to the chain of controllers
-    CLEDController() : m_Data(NULL), m_ColorCorrection(UncorrectedColor), m_ColorTemperature(UncorrectedTemperature), m_DitherMode(BINARY_DITHER), m_nLeds(0) {
+    // CLEDController() : m_Data(NULL), m_ColorCorrection(UncorrectedColor), m_ColorTemperature(UncorrectedTemperature), m_DitherMode(BINARY_DITHER), m_nLeds(0) {
+    // Including brightness data in general constructor list - though only used for APA102WB. Cleanup before generalizing. - NLG
+    CLEDController() : m_Data(NULL), b_Data(NULL), m_ColorCorrection(UncorrectedColor), m_ColorTemperature(UncorrectedTemperature), m_DitherMode(BINARY_DITHER), m_nLeds(0) {
         m_pNext = NULL;
         if(m_pHead==NULL) { m_pHead = this; }
         if(m_pTail != NULL) { m_pTail->m_pNext = this; }
@@ -81,6 +91,11 @@ public:
     }
 
     /// show function w/integer brightness, will scale for color correction and temperature
+    void show(const struct CRGB *data, uint8_t *bdata, int nLeds, uint8_t brightness) {
+        show(data, bdata, nLeds, getAdjustment(brightness));
+    }
+
+    /// show function w/integer brightness, will scale for color correction and temperature
     void showColor(const struct CRGB &data, int nLeds, uint8_t brightness) {
         showColor(data, nLeds, getAdjustment(brightness));
     }
@@ -88,6 +103,13 @@ public:
     /// show function using the "attached to this controller" led data
     void showLeds(uint8_t brightness=255) {
         show(m_Data, m_nLeds, getAdjustment(brightness));
+    }
+
+    /// show function using the "attached to this controller" led data
+    /// Including per-pixel brightness data (in addition to standard
+    /// global brightness adjustment)
+    void showLedsWB() {
+        show(m_Data, b_data, m_nLeds, getAdjustment(brightness));
     }
 
 	/// show the given color on the led strip
@@ -182,6 +204,7 @@ struct PixelController {
         uint8_t e[3];
         CRGB mScale;
         int8_t mAdvance;
+        int8_t bAdvance;
         int mOffsets[LANES];
 
         PixelController(const PixelController & other) {
@@ -194,6 +217,7 @@ struct PixelController {
             mData = other.mData;
             mScale = other.mScale;
             mAdvance = other.mAdvance;
+            bAdvance = other.bAdvance;
             mLenRemaining = mLen = other.mLen;
             for(int i = 0; i < LANES; ++i) { mOffsets[i] = other.mOffsets[i]; }
 
@@ -211,6 +235,15 @@ struct PixelController {
             enable_dithering(dither);
             mData += skip;
             mAdvance = (advance) ? 3+skip : 0;
+            bAdvance = 0; // check - default - NLG
+            initOffsets(len);
+        }
+
+        // with brightness data - nlg
+        PixelController(const CRGB *d, const uint8_t *b, int len, CRGB & s, EDitherMode dither = BINARY_DITHER) : mData((const uint8_t*)d), bData(b), mLen(len), mLenRemaining(len), mScale(s) {
+            enable_dithering(dither);
+            mAdvance = 3;
+            bAdvance = sizeof(uint8_t);
             initOffsets(len);
         }
 
@@ -324,7 +357,9 @@ struct PixelController {
         __attribute__((always_inline)) inline int advanceBy() { return mAdvance; }
 
         // advance the data pointer forward, adjust position counter
-         __attribute__((always_inline)) inline void advanceData() { mData += mAdvance; --mLenRemaining;}
+        //  __attribute__((always_inline)) inline void advanceData() { mData += mAdvance; --mLenRemaining;}
+        // bAdvance may be 0, besides for APA102WB
+         __attribute__((always_inline)) inline void advanceData() { mData += mAdvance; bData += bAdvance; --mLenRemaining;}
 
         // step the dithering forward
          __attribute__((always_inline)) inline void stepDithering() {
@@ -342,6 +377,10 @@ struct PixelController {
 
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByte(PixelController & pc) { return pc.mData[RO(SLOT)]; }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByte(PixelController & pc, int lane) { return pc.mData[pc.mOffsets[lane] + RO(SLOT)]; }
+
+        // nlg
+        __attribute__((always_inline)) inline uint8_t get5bitBright(PixelController & pc) { return pc.bData[0]; }
+        __attribute__((always_inline)) inline uint8_t get5bitBright() { return get5bitBright(*this); }
 
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t dither(PixelController & pc, uint8_t b) { return b ? qadd8(b, pc.d[RO(SLOT)]) : 0; }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t dither(PixelController & , uint8_t b, uint8_t d) { return b ? qadd8(b,d) : 0; }
@@ -405,6 +444,19 @@ protected:
     ///@param scale the rgb scaling to apply to each led before writing it out
     virtual void show(const struct CRGB *data, int nLeds, CRGB scale) {
         PixelController<RGB_ORDER, LANES, MASK> pixels(data, nLeds < 0 ? -nLeds : nLeds, scale, getDither());
+        if(nLeds < 0) {
+            // nLeds < 0 implies that we want to show them in reverse
+            pixels.mAdvance = -pixels.mAdvance;
+        }
+        showPixels(pixels);
+    }
+
+    /// write the passed in rgb data out to the leds managed by this controller
+    ///@param data the rgb data to write out to the strip
+    ///@param nLeds the number of leds being written out
+    ///@param scale the rgb scaling to apply to each led before writing it out
+    virtual void show(const struct CRGB *data, uint8_t *bdata, int nLeds, CRGB scale) {
+        PixelController<RGB_ORDER, LANES, MASK> pixels(data, bdata, nLeds < 0 ? -nLeds : nLeds, scale, getDither());
         if(nLeds < 0) {
             // nLeds < 0 implies that we want to show them in reverse
             pixels.mAdvance = -pixels.mAdvance;

@@ -78,6 +78,7 @@ enum ESPIChipsets {
 	SM16716,
 	P9813,
 	APA102,
+	APA102WB, // with brightness control
 	SK9822,
 	DOTSTAR
 };
@@ -201,6 +202,8 @@ public:
 	/// @param nLedsIfOffset - number of leds (4 argument version)
 	/// @returns a reference to the added controller
 	static CLEDController &addLeds(CLEDController *pLed, struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0);
+	// with brightness data:
+	static CLEDController &addLeds(CLEDController *pLed, struct CRGB *data, uint8_t *bdata, int nLedsOrOffset, int nLedsIfOffset = 0); 
 
 	/// @name Adding SPI based controllers
   //@{
@@ -259,10 +262,28 @@ public:
 			case SM16716: { static SM16716Controller<DATA_PIN, CLOCK_PIN, RGB_ORDER> c; return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset); }
 			case P9813: { static P9813Controller<DATA_PIN, CLOCK_PIN, RGB_ORDER> c; return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset); }
 			case DOTSTAR:
-			case APA102: { static APA102Controller<DATA_PIN, CLOCK_PIN, RGB_ORDER> c; return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset); }
 			case SK9822: { static SK9822Controller<DATA_PIN, CLOCK_PIN, RGB_ORDER> c; return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset); }
 		}
 	}
+
+	template<ESPIChipsets CHIPSET,  uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER, uint32_t SPI_DATA_RATE > CLEDController &addLeds(struct CRGB *data, uint8_t *bdata, int nLedsOrOffset, int nLedsIfOffset = 0) {
+		switch(CHIPSET) {
+			case APA102WB: { static APA102WBController<DATA_PIN, CLOCK_PIN, RGB_ORDER, SPI_DATA_RATE> c; return addLeds(&c, data, bdata, nLedsOrOffset, nLedsIfOffset); }
+		}
+	}
+
+	template<ESPIChipsets CHIPSET,  uint8_t DATA_PIN, uint8_t CLOCK_PIN > static CLEDController &addLeds(struct CRGB *data, uint8_t *bdata, int nLedsOrOffset, int nLedsIfOffset = 0) {
+		switch(CHIPSET) {
+			case APA102WB: { static APA102Controller<DATA_PIN, CLOCK_PIN> c; return addLeds(&c, data, bdata, nLedsOrOffset, nLedsIfOffset); }
+		}
+	}
+
+	template<ESPIChipsets CHIPSET,  uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER > static CLEDController &addLeds(struct CRGB *data, uint8_t *bdata, int nLedsOrOffset, int nLedsIfOffset = 0) {
+		switch(CHIPSET) {
+			case APA102WB: { static APA102Controller<DATA_PIN, CLOCK_PIN, RGB_ORDER> c; return addLeds(&c, data, bdata, nLedsOrOffset, nLedsIfOffset); }
+		}
+	}
+
 
 #ifdef SPI_DATA
 	template<ESPIChipsets CHIPSET> static CLEDController &addLeds(struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0) {

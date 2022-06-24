@@ -260,6 +260,72 @@ protected:
 
 };
 
+/// APA102 controller class WITH brightness control.
+/// @tparam DATA_PIN the data pin for these leds
+/// @tparam CLOCK_PIN the clock pin for these leds
+/// @tparam RGB_ORDER the RGB ordering for these leds
+/// @tparam SPI_SPEED the clock divider used for these leds.  Set using the DATA_RATE_MHZ/DATA_RATE_KHZ macros.  Defaults to DATA_RATE_MHZ(12)
+template <uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER = RGB, uint32_t SPI_SPEED = DATA_RATE_MHZ(12)>
+class APA102WBController : public CPixelLEDController<RGB_ORDER> {
+	typedef SPIOutput<DATA_PIN, CLOCK_PIN, SPI_SPEED> SPI;
+	SPI mSPI;
+
+	void startBoundary() { mSPI.writeWord(0); mSPI.writeWord(0); }
+	void endBoundary(int nLeds) { int nDWords = (nLeds/32); do { mSPI.writeByte(0xFF); mSPI.writeByte(0x00); mSPI.writeByte(0x00); mSPI.writeByte(0x00); } while(nDWords--); }
+
+	inline void writeLed(uint8_t brightness, uint8_t b0, uint8_t b1, uint8_t b2) __attribute__((always_inline)) {
+#ifdef FASTLED_SPI_BYTE_ONLY
+		mSPI.writeByte(0xE0 | brightness);
+		mSPI.writeByte(b0);
+		mSPI.writeByte(b1);
+		mSPI.writeByte(b2);
+#else
+		uint16_t b = 0xE000 | (brightness << 8) | (uint16_t)b0;
+		mSPI.writeWord(b);
+		uint16_t w = b1 << 8;
+		w |= b2;
+		mSPI.writeWord(w);
+#endif
+	}
+
+public:
+	APA102WBController() {}
+
+	virtual void init() {
+		mSPI.init();
+	}
+
+protected:
+	virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
+		mSPI.select();
+
+		uint8_t s0 = pixels.getScale0(), s1 = pixels.getScale1(), s2 = pixels.getScale2();
+#if FASTLED_USE_GLOBAL_BRIGHTNESS == 1
+		const uint16_t maxBrightness = 0x1F;
+		uint16_t brightness = ((((uint16_t)max(max(s0, s1), s2) + 1) * maxBrightness - 1) >> 8) + 1;
+		s0 = (maxBrightness * s0 + (brightness >> 1)) / brightness;
+		s1 = (maxBrightness * s1 + (brightness >> 1)) / brightness;
+		s2 = (maxBrightness * s2 + (brightness >> 1)) / brightness;
+#else
+		const uint8_t brightness = 0x1F;
+#endif
+
+		startBoundary();
+		while (pixels.has(1)) {
+			// include brightness val - nlg
+			writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
+			// writeLed(brightness, pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
+			pixels.stepDithering();
+			pixels.advanceData();
+		}
+		endBoundary(pixels.size());
+
+		mSPI.waitFully();
+		mSPI.release();
+	}
+
+};
+
 /// SK9822 controller class.
 /// @tparam DATA_PIN the data pin for these leds
 /// @tparam CLOCK_PIN the clock pin for these leds
