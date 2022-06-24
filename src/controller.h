@@ -108,8 +108,8 @@ public:
     /// show function using the "attached to this controller" led data
     /// Including per-pixel brightness data (in addition to standard
     /// global brightness adjustment)
-    void showLedsWB() {
-        show(m_Data, b_data, m_nLeds, getAdjustment(brightness));
+    void showLedsWB(uint8_t brightness=255) {
+        show(m_Data, b_Data, m_nLeds, getAdjustment(brightness));
     }
 
 	/// show the given color on the led strip
@@ -125,6 +125,14 @@ public:
 	/// set the default array of leds to be used by this controller
     CLEDController & setLeds(CRGB *data, int nLeds) {
         m_Data = data;
+        m_nLeds = nLeds;
+        return *this;
+    }
+
+	/// set the default array of leds (with brightness) to be used by this controller
+    CLEDController & setLedsWB(CRGB *data, uint8_t *bdata, int nLeds) {
+        m_Data = data;
+        b_Data = bdata;
         m_nLeds = nLeds;
         return *this;
     }
@@ -199,6 +207,7 @@ public:
 template<EOrder RGB_ORDER, int LANES=1, uint32_t MASK=0xFFFFFFFF>
 struct PixelController {
         const uint8_t *mData;
+        const uint8_t *bData;
         int mLen,mLenRemaining;
         uint8_t d[3];
         uint8_t e[3];
