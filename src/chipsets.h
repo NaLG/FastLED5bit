@@ -313,7 +313,10 @@ protected:
 		startBoundary();
 		while (pixels.has(1)) {
 			// include brightness val - nlg
-			writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
+			// works with mData + bData - TODO gracefully select between the two:
+			// writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
+			// works with mbData:
+			writeLed(pixels.loadAndScaleWB3(0, s3), pixels.loadAndScaleWB0(0, s0), pixels.loadAndScaleWB1(0, s1), pixels.loadAndScaleWB2(0, s2));
 			// writeLed(brightness, pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
 			pixels.stepDithering();
 			pixels.advanceData();

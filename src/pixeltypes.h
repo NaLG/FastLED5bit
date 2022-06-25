@@ -886,6 +886,85 @@ struct CRGB16 {
     } HTMLColorCode16;
 };
 
+struct CRGB5b {
+	union {
+		struct {
+            union {
+                uint8_t r;
+                uint8_t red;
+            };
+            union {
+                uint8_t g;
+                uint8_t green;
+            };
+            union {
+                uint8_t b;
+                uint8_t blue;
+            };
+            union {
+                uint8_t brt;
+                uint8_t brightness;
+            };
+        };
+		uint8_t raw[4];
+	};
+
+    /// Array access operator to index into the crgb object
+	inline uint8_t& operator[] (uint8_t x) __attribute__((always_inline))
+    {
+        return raw[x];
+    }
+
+    /// Array access operator to index into the crgb object
+    inline const uint8_t& operator[] (uint8_t x) const __attribute__((always_inline))
+    {
+        return raw[x];
+    }
+
+    // default values are UNINITIALIZED
+    inline CRGB5b() __attribute__((always_inline)) = default;
+
+    /// allow construction from R, G, B
+    inline CRGB5b( uint8_t ir, uint8_t ig, uint8_t ib, uint8_t ibrt)  __attribute__((always_inline))
+        : r(ir), g(ig), b(ib), brt(ibrt)
+    {
+    }
+
+    /// allow copy construction
+	inline CRGB5b(const CRGB5b& rhs) __attribute__((always_inline)) = default;
+
+    /// allow assignment from one RGB struct to another
+	inline CRGB5b& operator= (const CRGB5b& rhs) __attribute__((always_inline)) = default;
+
+    /// allow assignment from R, G, and B
+	inline CRGB5b& setRGB5b (uint8_t nr, uint8_t ng, uint8_t nb, uint8_t nbrt) __attribute__((always_inline))
+    {
+        r = nr;
+        g = ng;
+        b = nb;
+        brt = nbrt;
+        return *this;
+    }
+
+    /// Predefined RGB colors
+    typedef enum {
+        DarkBlue=0x00008B1F,
+        DarkGray=0xA9A9A91F,
+        DarkGreen=0x0064001F,
+        DarkViolet=0x9400D31F,
+        Gold=0xFFD7001F,
+
+        // LED RGB color that roughly approximates
+        // the color of incandescent fairy lights,
+        // assuming that you're using FastLED
+        // color correction on your LEDs (recommended).
+        FairyLight=0xFFE42D1F,
+        // If you are using no color correction, use this
+        FairyLightNCC=0xFF9D2A1F
+
+    } HTMLColorCode5b;
+};
+
 
 inline __attribute__((always_inline)) bool operator== (const CRGB& lhs, const CRGB& rhs)
 {
