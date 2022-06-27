@@ -300,6 +300,7 @@ protected:
 		mSPI.select();
 
 		uint8_t s0 = pixels.getScale0(), s1 = pixels.getScale1(), s2 = pixels.getScale2();
+		uint8_t s3 = 0xff; // don't scale 5bit brightness value
 #if FASTLED_USE_GLOBAL_BRIGHTNESS == 1
 		const uint16_t maxBrightness = 0x1F;
 		uint16_t brightness = ((((uint16_t)max(max(s0, s1), s2) + 1) * maxBrightness - 1) >> 8) + 1;

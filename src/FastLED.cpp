@@ -50,7 +50,7 @@ CLEDController &CFastLED::addLeds(CLEDController *pLed,
 	int nLeds = (nLedsIfOffset > 0) ? nLedsIfOffset : nLedsOrOffset;
 
 	pLed->init();
-	pLed->setLedsWB(data + nOffset, bdata + nOffset, nLeds);
+	pLed->setLeds(data + nOffset, bdata + nOffset, nLeds);
 	FastLED.setMaxRefreshRate(pLed->getMaxRefreshRate(),true);
 	return *pLed;
 }
