@@ -22,7 +22,8 @@ FASTLED_NAMESPACE_BEGIN
 //  for 5-bit brightness, 4byte val: - NLG
 #define RO5b(X) RGB5b_BYTE(RGB_ORDER, X)
 // TODO: Edit EOrder, include RGBbrt and skip conditional
-#define RGB5b_BYTE(RO5b,X) (X==4 ? X : (((RO5b)>>(3*(2-(X)))) & 0x3))
+// brt is fixed at [3]
+#define RGB5b_BYTE(RO5b,X) (X==3 ? X : (((RO5b)>>(3*(2-(X)))) & 0x3))
 
 // #define RGB5b_BYTE0(RO5b) ((RO5b>>6) & 0x3)
 // #define RGB5b_BYTE1(RO5b) ((RO5b>>3) & 0x3)
@@ -65,27 +66,27 @@ protected:
     ///@param scale the rgb scaling value for outputting color
     virtual void showColor(const struct CRGB & data, int nLeds, CRGB scale) = 0;
 
-	/// write the passed in rgb data out to the leds managed by this controller
-	///@param data the rgb data to write out to the strip
-	///@param nLeds the number of leds being written out
-	///@param scale the rgb scaling to apply to each led before writing it out
+    /// write the passed in rgb data out to the leds managed by this controller
+    ///@param data the rgb data to write out to the strip
+    ///@param nLeds the number of leds being written out
+    ///@param scale the rgb scaling to apply to each led before writing it out
     virtual void show(const struct CRGB *data, int nLeds, CRGB scale) = 0;
 
-	/// write the passed in rgb data out to the leds managed by this controller
-	///@param data the rgb data to write out to the strip
-	///@param bdata the brightness data to write out to the strip (0-31)
-	///@param nLeds the number of leds being written out
-	///@param scale the rgb scaling to apply to each led before writing it out
+    /// write the passed in rgb data out to the leds managed by this controller
+    ///@param data the rgb data to write out to the strip
+    ///@param bdata the brightness data to write out to the strip (0-31)
+    ///@param nLeds the number of leds being written out
+    ///@param scale the rgb scaling to apply to each led before writing it out
     virtual void show(const struct CRGB *data, uint8_t *bdata, int nLeds, CRGB scale) = 0;
 
-	/// write the passed in rgb +5brt data out to the leds managed by this controller
-	///@param data the rgb data to write out to the strip
-	///@param nLeds the number of leds being written out
-	///@param scale the rgb scaling to apply to each led before writing it out
+    /// write the passed in rgb +5brt data out to the leds managed by this controller
+    ///@param data the rgb data to write out to the strip
+    ///@param nLeds the number of leds being written out
+    ///@param scale the rgb scaling to apply to each led before writing it out
     virtual void show(const struct CRGB5b *data, int nLeds, CRGB scale) = 0;
 
 public:
-	/// create an led controller object, add it to the chain of controllers
+    /// create an led controller object, add it to the chain of controllers
     // CLEDController() : m_Data(NULL), m_ColorCorrection(UncorrectedColor), m_ColorTemperature(UncorrectedTemperature), m_DitherMode(BINARY_DITHER), m_nLeds(0) {
     // Including brightness data in general constructor list - though only used for APA102WB. Cleanup before generalizing. - NLG
     CLEDController() : m_Data(NULL), b_Data(NULL), m_ColorCorrection(UncorrectedColor), m_ColorTemperature(UncorrectedTemperature), m_DitherMode(BINARY_DITHER), m_nLeds(0) {
@@ -95,11 +96,11 @@ public:
         m_pTail = this;
     }
 
-	///initialize the LED controller
-	virtual void init() = 0;
+    ///initialize the LED controller
+    virtual void init() = 0;
 
-	///clear out/zero out the given number of leds.
-	virtual void clearLeds(int nLeds) { showColor(CRGB::Black, nLeds, CRGB::Black); }
+    ///clear out/zero out the given number of leds.
+    virtual void clearLeds(int nLeds) { showColor(CRGB::Black, nLeds, CRGB::Black); }
 
     /// show function w/integer brightness, will scale for color correction and temperature
     void show(const struct CRGB *data, int nLeds, uint8_t brightness) {
@@ -112,7 +113,7 @@ public:
     }
 
     /// show function w/integer brightness, will scale for color correction and temperature
-    void show(const struct CRGB5d *data, int nLeds, uint8_t brightness) {
+    void show(const struct CRGB5b *data, int nLeds, uint8_t brightness) {
         show(data, nLeds, getAdjustment(brightness));
     }
 
@@ -129,11 +130,18 @@ public:
     /// show function using the "attached to this controller" led data
     /// Including per-pixel brightness data (in addition to standard
     /// global brightness adjustment)
+    void showLedsW5b(uint8_t brightness=255) {
+        show(mb_Data, m_nLeds, getAdjustment(brightness));
+    }
+
+    /// show function using the "attached to this controller" led data
+    /// Including per-pixel brightness data (in addition to standard
+    /// global brightness adjustment)
     void showLedsWB(uint8_t brightness=255) {
         show(m_Data, b_Data, m_nLeds, getAdjustment(brightness));
     }
 
-	/// show the given color on the led strip
+    /// show the given color on the led strip
     void showColor(const struct CRGB & data, uint8_t brightness=255) {
         showColor(data, m_nLeds, getAdjustment(brightness));
     }
@@ -143,14 +151,14 @@ public:
     /// get the next controller in the chain after this one.  will return NULL at the end of the chain
     CLEDController *next() { return m_pNext; }
 
-	/// set the default array of leds to be used by this controller
+    /// set the default array of leds to be used by this controller
     CLEDController & setLeds(CRGB *data, int nLeds) {
         m_Data = data;
         m_nLeds = nLeds;
         return *this;
     }
 
-	/// set the default array of leds (with brightness) to be used by this controller
+    /// set the default array of leds (with brightness) to be used by this controller
     CLEDController & setLeds(CRGB *data, uint8_t *bdata, int nLeds) {
         m_Data = data;
         b_Data = bdata;
@@ -158,14 +166,14 @@ public:
         return *this;
     }
 
-	/// set the default array of leds (with brightness) to be used by this controller
+    /// set the default array of leds (with brightness) to be used by this controller
     CLEDController & setLeds(CRGB5b *data, int nLeds) {
         mb_Data = data;
         m_nLeds = nLeds;
         return *this;
     }
 
-	/// zero out the led data managed by this controller
+    /// zero out the led data managed by this controller
     void clearLedData() {
         if(m_Data) {
             memset8((void*)m_Data, 0, sizeof(struct CRGB) * m_nLeds);
@@ -181,26 +189,26 @@ public:
     /// Reference to the n'th item in the controller
     CRGB &operator[](int x) { return m_Data[x]; }
 
-	/// set the dithering mode for this controller to use
+    /// set the dithering mode for this controller to use
     inline CLEDController & setDither(uint8_t ditherMode = BINARY_DITHER) { m_DitherMode = ditherMode; return *this; }
     /// get the dithering option currently set for this controller
     inline uint8_t getDither() { return m_DitherMode; }
 
-	/// the the color corrction to use for this controller, expressed as an rgb object
+    /// the the color corrction to use for this controller, expressed as an rgb object
     CLEDController & setCorrection(CRGB correction) { m_ColorCorrection = correction; return *this; }
     /// set the color correction to use for this controller
     CLEDController & setCorrection(LEDColorCorrection correction) { m_ColorCorrection = correction; return *this; }
     /// get the correction value used by this controller
     CRGB getCorrection() { return m_ColorCorrection; }
 
-	/// set the color temperature, aka white point, for this controller
+    /// set the color temperature, aka white point, for this controller
     CLEDController & setTemperature(CRGB temperature) { m_ColorTemperature = temperature; return *this; }
     /// set the color temperature, aka white point, for this controller
     CLEDController & setTemperature(ColorTemperature temperature) { m_ColorTemperature = temperature; return *this; }
     /// get the color temperature, aka whipe point, for this controller
     CRGB getTemperature() { return m_ColorTemperature; }
 
-	/// Get the combined brightness/color adjustment for this controller
+    /// Get the combined brightness/color adjustment for this controller
     CRGB getAdjustment(uint8_t scale) {
         return computeAdjustment(scale, m_ColorCorrection, m_ColorTemperature);
     }
@@ -246,6 +254,7 @@ struct PixelController {
         int8_t mAdvance;
         int8_t bAdvance;
         int mOffsets[LANES];
+        int mbOffsets[LANES]; //  ??? - nlg
 
         PixelController(const PixelController & other) {
             d[0] = other.d[0];
@@ -425,7 +434,7 @@ struct PixelController {
 
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByte(PixelController & pc) { return pc.mData[RO(SLOT)]; }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByte(PixelController & pc, int lane) { return pc.mData[pc.mOffsets[lane] + RO(SLOT)]; }
-        template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByteWB(PixelController & pc, int lane) { return pc.mbData[pc.mOffsets[lane] + RO5b(SLOT)]; }
+        template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadByteWB(PixelController & pc, int lane) { return pc.mbData[pc.mbOffsets[lane] + RO5b(SLOT)]; }
 
         // Only works with bdata, not mbdata - TODO cleanup - nlg
         __attribute__((always_inline)) inline uint8_t get5bitBright(PixelController & pc) { return pc.bData[0]; }
@@ -443,6 +452,7 @@ struct PixelController {
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadAndScale(PixelController & pc, int lane, uint8_t d, uint8_t scale) { return scale8(pc.dither<SLOT>(pc, pc.loadByte<SLOT>(pc, lane), d), scale); }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadAndScale(PixelController & pc, int lane, uint8_t scale) { return scale8(pc.loadByte<SLOT>(pc, lane), scale); }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadAndScaleWB(PixelController & pc, int lane, uint8_t scale) { return scale8(pc.loadByteWB<SLOT>(pc, lane), scale); }
+        template<int SLOT>  __attribute__((always_inline)) inline static uint8_t loadWB(PixelController & pc, int lane) { return pc.loadByteWB<SLOT>(pc, lane); }
 
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t advanceAndLoadAndScale(PixelController & pc) { pc.advanceData(); return pc.loadAndScale<SLOT>(pc); }
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t advanceAndLoadAndScale(PixelController & pc, int lane) { pc.advanceData(); return pc.loadAndScale<SLOT>(pc, lane); }
@@ -452,6 +462,10 @@ struct PixelController {
         template<int SLOT>  __attribute__((always_inline)) inline static uint8_t getscale(PixelController & pc) { return pc.mScale.raw[RO(SLOT)]; }
 
         // Helper functions to get around gcc stupidities
+        __attribute__((always_inline)) inline uint8_t loadWB0(int lane) { return loadWB<0>(*this, lane); }
+        __attribute__((always_inline)) inline uint8_t loadWB1(int lane) { return loadWB<1>(*this, lane); }
+        __attribute__((always_inline)) inline uint8_t loadWB2(int lane) { return loadWB<2>(*this, lane); }
+        __attribute__((always_inline)) inline uint8_t loadWB3(int lane) { return loadWB<3>(*this, lane); } // 5bit bright - nlg
         __attribute__((always_inline)) inline uint8_t loadAndScale0(int lane, uint8_t scale) { return loadAndScale<0>(*this, lane, scale); }
         __attribute__((always_inline)) inline uint8_t loadAndScale1(int lane, uint8_t scale) { return loadAndScale<1>(*this, lane, scale); }
         __attribute__((always_inline)) inline uint8_t loadAndScale2(int lane, uint8_t scale) { return loadAndScale<2>(*this, lane, scale); }
@@ -527,6 +541,7 @@ protected:
         if(nLeds < 0) {
             // nLeds < 0 implies that we want to show them in reverse
             pixels.mAdvance = -pixels.mAdvance;
+            pixels.mbAdvance = -pixels.mbAdvance;
         }
         showPixels(pixels);
     }

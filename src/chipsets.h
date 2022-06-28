@@ -316,8 +316,11 @@ protected:
 			// include brightness val - nlg
 			// works with mData + bData - TODO gracefully select between the two:
 			// writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
-			// works with mbData:
+			
+			// works with mbData???  Not yet :( - nlg
 			writeLed(pixels.loadAndScaleWB3(0, s3), pixels.loadAndScaleWB0(0, s0), pixels.loadAndScaleWB1(0, s1), pixels.loadAndScaleWB2(0, s2));
+			// writeLed(pixels.loadWB3(0, s3), pixels.loadWB0(0, s0), pixels.loadWB1(0, s1), pixels.loadWB2(0, s2));
+
 			// writeLed(brightness, pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
 			pixels.stepDithering();
 			pixels.advanceData();
