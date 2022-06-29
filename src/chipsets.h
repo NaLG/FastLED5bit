@@ -300,7 +300,7 @@ protected:
 		mSPI.select();
 
 		uint8_t s0 = pixels.getScale0(), s1 = pixels.getScale1(), s2 = pixels.getScale2();
-		uint8_t s3 = 0xff; // don't scale 5bit brightness value
+		// uint8_t s3 = 0xff; // don't scale 5bit brightness value
 #if FASTLED_USE_GLOBAL_BRIGHTNESS == 1
 		const uint16_t maxBrightness = 0x1F;
 		uint16_t brightness = ((((uint16_t)max(max(s0, s1), s2) + 1) * maxBrightness - 1) >> 8) + 1;
@@ -315,10 +315,10 @@ protected:
 		while (pixels.has(1)) {
 			// include brightness val - nlg
 			// works with mData + bData - TODO gracefully select between the two:
-			// writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
+			writeLed(pixels.get5bitBright(), pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));
 			
 			// works with mbData???  Not yet :( - nlg
-			writeLed(pixels.loadAndScaleWB3(0, s3), pixels.loadAndScaleWB0(0, s0), pixels.loadAndScaleWB1(0, s1), pixels.loadAndScaleWB2(0, s2));
+			// writeLed(pixels.loadAndScaleWB3(0, s3), pixels.loadAndScaleWB0(0, s0), pixels.loadAndScaleWB1(0, s1), pixels.loadAndScaleWB2(0, s2));
 			// writeLed(pixels.loadWB3(0, s3), pixels.loadWB0(0, s0), pixels.loadWB1(0, s1), pixels.loadWB2(0, s2));
 
 			// writeLed(brightness, pixels.loadAndScale0(0, s0), pixels.loadAndScale1(0, s1), pixels.loadAndScale2(0, s2));

@@ -541,7 +541,7 @@ protected:
         if(nLeds < 0) {
             // nLeds < 0 implies that we want to show them in reverse
             pixels.mAdvance = -pixels.mAdvance;
-            pixels.mbAdvance = -pixels.mbAdvance;
+            // pixels.mbAdvance = -pixels.mbAdvance;
         }
         showPixels(pixels);
     }

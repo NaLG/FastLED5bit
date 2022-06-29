@@ -749,8 +749,9 @@ struct uint8_2x {
     union {
         uint8_t bs[2];
         struct {
-            uint8_t hi;
+            // order matters
             uint8_t lo;
+            uint8_t hi;
         };
     };
 };
